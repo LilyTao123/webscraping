@@ -1,0 +1,30 @@
+import requests
+import json
+import re
+import pandas as pd
+from sqlalchemy import create_engine
+
+def get_data():
+    # create your list of companies
+    d=pd.DataFrame(data=df)
+    return d
+
+comid = get_data()
+tag = []
+com = []
+for each in comid["StockCode"]:
+    url = "https://xueqiu.com/S/" + "NQ" + each
+    hd = {
+        'User-Agent': 'Mozilla/5.0(Windows NT 10.0;Win64;x64) AppleWebKit / 537.36(KHTML, likeGecko) Chrome / 75.0.3770.100Safari / 537.36'
+    }
+    response = requests.get(url, headers=hd)
+    data = response.text
+    s = re.compile('"flagStr":"(.*?)"')
+    #s = re.compile(r'class ="stock-flag" >(.*?)',re.S)
+    r = s.findall(data)
+    tag.append(r)
+    com.append(each)
+
+
+results = pd.DataFrame({"CompanyCode":com,"status":tag})
+results.to_csv("result.csv",encoding = "utf-8-sig")
