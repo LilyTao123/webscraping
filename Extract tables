@@ -1,0 +1,93 @@
+import pdfplumber
+import re,os
+def deal_table(tables):
+    for pdf_table in tables:
+        table = []
+        cells = []
+        for row in pdf_table:
+            if not any(row):
+                # 如果一行全为空，则视为一条记录结束
+                if any(cells):
+
+                    table.append(cells)
+                    cells = []
+            elif all(row):
+                # 如果一行全不为空，则本条为新行，上一条结束
+                if any(cells):
+                    table.append(cells)
+                    cells = []
+                table.append(row)
+            else:
+                if len(cells) == 0:
+                    cells = row
+                else:
+                    for i in range(len(row)):
+                        if row[i] is not None:
+                            row[i]=row[i].replace("\n","")
+                            cells[i] = row[i] if cells[i] is None else cells[i] + row[i]
+        for row in table:
+            print([re.sub('\s+', '', cell) if cell is not None else None for cell in row])
+        print('---------- 分割线 ----------')
+
+
+def get_A(path):
+    path = path
+    with pdfplumber.open(path) as pdf:
+        #r = re.compile(".*主要游戏基本情况.*", re.S)
+        for page in pdf.pages:
+            text = page.extract_text()  # 提取文本
+            if re.match(r".*主要子公司.*",text,re.S):
+                table1 = page.extract_tables()
+                deal_table(table1)
+            # if re.match(r".*主要游戏分季度.*",text,re.S):
+            #     table2 = page.extract_tables()
+            #     deal_table(table2)
+        return table2
+
+
+def get_single(name,page_number):
+    path = 'C:/Users/Admin/Desktop/工作/B_财报/财报/财报原文/2020A财报/新三板/' + name
+    with pdfplumber.open(path) as pdf:
+        page = pdf.pages
+        p = page[page_number]
+        table = p.extract_tables()
+        deal_table(table)
+        for row in table:
+            for cell in row:
+                print(cell)
+
+
+def allpdf():
+    file_names = []
+    path = 'C:/Users/Admin/Desktop/工作/B_财报/财报/财报原文/2020A财报/联系/'
+    for dirpath, dirnames, filenames in os.walk(path):
+        file_names = filenames
+    file_names = file_names[:]
+    for n in file_names:
+        print(n)
+        if "延期" in n or "无法" in n:
+            continue
+        pa = path + str(n)
+        print(get_A(pa))
+        #get_san(pa)
+
+def get_san(path):
+    tables = []
+    with pdfplumber.open(path) as pdf:
+        r = re.compile(".*主要游戏基本情况.*", re.S)
+        for page in pdf.pages:
+            text = page.extract_text()  # 提取文本
+            if r.match(text):
+                table = page.extract_tables()
+                tables.append(table)
+        for table in tables:
+            for row in table:
+                for cell in row:
+                    print(cell)
+
+if __name__ =='__main__':
+    allpdf()
+    #获取某个企业财报某一页的
+    # name = "冰川网络2020年年度报告.pdf"
+    # page_number = 22
+    # get_single(name,page_number)
