@@ -1,0 +1,118 @@
+import json
+from time import sleep
+from urllib import parse
+from sqlalchemy import create_engine
+import random
+import pandas as pd
+import requests
+
+
+def get_adress(bank_name):
+    url = "http://www.cninfo.com.cn/new/information/topSearch/detailOfQuery"
+    data = {
+        'keyWord': bank_name,
+        'maxSecNum': 10,
+        'maxListNum': 5,
+    }
+    hd = {
+        'Host': 'www.cninfo.com.cn',
+        'Origin': 'http://www.cninfo.com.cn',
+        'Pragma': 'no-cache',
+        'Accept-Encoding': 'gzip,deflate',
+        'Connection': 'keep-alive',
+        'Content-Length': '70',
+        'User-Agent': 'Mozilla/5.0(Windows NT 10.0;Win64;x64) AppleWebKit / 537.36(KHTML, likeGecko) Chrome / 75.0.3770.100Safari / 537.36',
+        'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+        'Accept': 'application/json,text/plain,*/*',
+        'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8',
+    }
+    r = requests.post(url, headers=hd, data=data)
+    #print(r.text)
+    r = r.content
+    m = str(r, encoding="utf-8")
+    pk = json.loads(m)
+    orgId = pk["keyBoardList"][0]["orgId"]  # 获取参数
+    plate = pk["keyBoardList"][0]["plate"]
+    code = pk["keyBoardList"][0]["code"]
+    com_name = pk["keyBoardList"][0]["zwjc"]
+    return orgId, plate, code, com_name
+
+
+def download_PDF(url, comname, file_name):  # 下载pdf
+    url = url
+    r = requests.get(url)
+    path = "C:/Users/Admin/Desktop/a/"
+    p = path + "/" + comname + file_name + ".pdf"
+    p = p.replace("*", "")
+    f = open(str(p), "wb")
+    f.write(r.content)
+
+
+def get_PDF(orgId, plate, code, name):
+    url = "http://www.cninfo.com.cn/new/hisAnnouncement/query"
+    data = {
+        'stock': '{},{}'.format(code, orgId),
+        'tabName': 'fulltext',
+        'pageSize': 30,
+        'pageNum': 1,
+        'column': 'szse',
+        'category': 'category_bndbg_szsh;',
+        'plate': 'sz',
+        'seDate': '',
+        'searchkey': '',
+        'secid': '',
+        'sortName': '',
+        'sortType': '',
+        'isHLtitle': 'true',
+    }
+
+    hd = {
+        'Host': 'www.cninfo.com.cn',
+        'Origin': 'http://www.cninfo.com.cn',
+        'Pragma': 'no-cache',
+        'Accept-Encoding': 'gzip,deflate',
+        'Connection': 'keep-alive',
+        # 'Content-Length': '216',
+        'User-Agent': 'User-Agent:Mozilla/5.0 (Windows; U; Windows NT 6.1; en-US) AppleWebKit/533.20.25 (KHTML, like Gecko) Version/5.0.4 Safari/533.20.27',
+        'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+        'Accept': 'application/json,text/plain,*/*',
+        'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8',
+        'X-Requested-With': 'XMLHttpRequest',
+        # 'Cookie': cookies
+    }
+    data = parse.urlencode(data)
+    #print(data)
+    try:
+        r = requests.post(url, headers=hd, data=data)
+        r = str(r.content, encoding="utf-8")
+        r = json.loads(r)
+        reports_list = r['announcements']
+        for report in reports_list:
+            a = 0
+    except TypeError:
+        print("没有这个期间的财报")
+    else:
+        #print(reports_list)
+        for report in reports_list:
+            if '摘要' in report['announcementTitle'] or "2021" not in report['announcementTitle']:
+                continue
+            if '正文' in report['announcementTitle']:
+                continue
+            elif '半年度' in report['announcementTitle']:  # http://static.cninfo.com.cn/finalpage/2019-03-29/1205958883.PDF
+                pdf_url = "http://static.cninfo.com.cn/" + report['adjunctUrl']
+                file_name = report['announcementTitle']
+                print("正在下载：" + pdf_url, "存放在：/" + name + file_name)
+                download_PDF(pdf_url, name, file_name)
+                sleep(random.randint(2,6))
+
+
+if __name__ == '__main__':
+    bank_list = ["拓维信息","盛天网络","凯撒文化"]
+    #bank_list = ["三七互娱"] #可以填企业名称，也可以填股票代码
+    for bank in bank_list:
+        #os.mkdir(bank)
+        orgId, plate, code, name = get_adress(bank)
+        get_PDF(orgId, plate, code, name)
+        print("下一家~")
+    print("All done!")
+
