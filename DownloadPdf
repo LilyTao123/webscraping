@@ -31,14 +31,14 @@ def get_adress(bank_name):
     r = r.content
     m = str(r, encoding="utf-8")
     pk = json.loads(m)
-    orgId = pk["keyBoardList"][0]["orgId"]  # 获取参数
+    orgId = pk["keyBoardList"][0]["orgId"]  # get parameters
     plate = pk["keyBoardList"][0]["plate"]
     code = pk["keyBoardList"][0]["code"]
     com_name = pk["keyBoardList"][0]["zwjc"]
     return orgId, plate, code, com_name
 
 
-def download_PDF(url, comname, file_name):  # 下载pdf
+def download_PDF(url, comname, file_name):  # Downloading pdf
     url = url
     r = requests.get(url)
     path = "C:/Users/Admin/Desktop/a/"
@@ -90,7 +90,7 @@ def get_PDF(orgId, plate, code, name):
         for report in reports_list:
             a = 0
     except TypeError:
-        print("没有这个期间的财报")
+        print("No finicial reports")
     else:
         #print(reports_list)
         for report in reports_list:
@@ -101,18 +101,18 @@ def get_PDF(orgId, plate, code, name):
             elif '半年度' in report['announcementTitle']:  # http://static.cninfo.com.cn/finalpage/2019-03-29/1205958883.PDF
                 pdf_url = "http://static.cninfo.com.cn/" + report['adjunctUrl']
                 file_name = report['announcementTitle']
-                print("正在下载：" + pdf_url, "存放在：/" + name + file_name)
+                print("Downloading：" + pdf_url, "Saved in：/" + name + file_name)
                 download_PDF(pdf_url, name, file_name)
                 sleep(random.randint(2,6))
 
 
 if __name__ == '__main__':
     bank_list = ["拓维信息","盛天网络","凯撒文化"]
-    #bank_list = ["三七互娱"] #可以填企业名称，也可以填股票代码
+    #bank_list = ["三七互娱"] # input name of company of stock code
     for bank in bank_list:
         #os.mkdir(bank)
         orgId, plate, code, name = get_adress(bank)
         get_PDF(orgId, plate, code, name)
-        print("下一家~")
+        print("next~")
     print("All done!")
 
